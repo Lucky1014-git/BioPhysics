@@ -14,6 +14,7 @@ def gaussian(x, A, m, s):
 def compute_ssr(params):
     A, m, s = params
     y_model = gaussian(x_data, A, m, s)
+    print(np.sum((y_model - y_data) ** 2))
     return np.sum((y_model - y_data) ** 2)
 
 # Initial guess for A, m, s
