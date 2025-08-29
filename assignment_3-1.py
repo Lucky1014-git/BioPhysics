@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Experimental data
 #t_data = np.array([0, 25, 26, 28, 31, 33, 35, 38, 40, 42, 45, 47, 49, 52, 54, 56, 59, 61, 63, 66])
-t_data = np.array([0, 1, 3, 6, 8, 10, 13, 15, 17, 20, 22, 24, 27, 29, 31, 34, 36, 38, 41])
+t_data = np.array([24, 26, 28, 31, 33, 35, 38, 40, 42, 45, 47, 49, 52, 54, 56, 59, 61, 63, 66])
 
 # Each y column (fill missing values with np.nan)
 T_data_list = [
@@ -43,15 +43,16 @@ def ssr_all(params):
     return total_ssr
 
 # Initial guess and bounds:  λ, β, k, δ, p, c
-initial_guess = [0.1, 1e-5, 0.1, 0.1, 1e5, 0.1]
+initial_guess = [0.10, 1e-5, 0.1, 0.1, 1e5, 0.1]
 bounds = [
-    (0.0001, 1),      # λ
-    (0, 1e-2),    # β
-    (0.0001, 1),      # k
-    (0.0001, 1),      # δ
-    (1e3, 1e7),       # p
-    (0.0001, 1)       # c
+    (0.10, 0.35),      # λ: Narrower range around 0.3
+    (0, 1e-2),         # β
+    (0.0001, 1),       # k
+    (0.0001, 1),       # δ
+    (1e3, 1e7),        # p
+    (0.0001, 1)        # c
 ]
+
 
 # Fit parameters
 result = minimize(ssr_all, initial_guess,

@@ -104,14 +104,14 @@ def ssr(params):
 
 
 # --- Optimization ---
-initial_guess = [0.15, 1e-5, 0.1854, 0.0880, 7.4416e+04, 20.0]
+initial_guess = [0.12, 1.1735e-10, 0.1854, 0.0880, 7.4416e+04, 0.0913]
 bounds = [
-    (0.15, 0.35),
+    (0.10, 0.35),
     (np.log10(1e-11), np.log10(1e-5)),
     (0.05, 5.0),
     (0.05, 5.0),
     (np.log10(1e2), np.log10(1e8)),
-    (0.05, 30.0)
+    (0.05, 10.0)
 ]
 
 result = minimize(ssr, initial_guess, bounds=bounds)

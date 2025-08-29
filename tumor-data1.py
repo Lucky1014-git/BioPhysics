@@ -41,55 +41,55 @@ def base_model(Y, t, λ, β, k, δ, p, c):
     dVdt = p * I - c * V
     return [dTdt, dEdt, dIdt, dVdt]
 
+
 def ssr(params):
     λ, β, k, δ, p, c = params
     y0 = [1.76, 0, 0, 0]
     y1 = odeint(base_model, y0, [0, 24, 25], args=(λ, β, k, δ, p, c))
-    y02 = y1[-1,:]
+    y02 = y1[-1, :]
     y02[3] = y02[3] + 100
     y2 = odeint(base_model, y02, [25, 25.04167, 26, 27, 28], args=(λ, β, k, δ, p, c))
-    y03=y2[-1,:]
+    y03 = y2[-1, :]
     y03[3] = y03[3] + 100
-    y3 = odeint(base_model,y03, [28, 29, 31], args=(λ, β, k, δ, p, c))
+    y3 = odeint(base_model, y03, [28, 29, 31], args=(λ, β, k, δ, p, c))
     y04 = y3[-1, :]
     y04[3] = y04[3] + 100
-    y4 = odeint(base_model, y04, [31, 33, 35,38, 40, 42, 45, 47,49, 52, 54, 56, 59, 61, 63, 66], args=(λ, β, k, δ, p, c))
-    #print(y1)
-    ssr=0
-    #print("ssr ", ssr)
-    ssr += (y1[1, 0] + y1[1, 1] + y1[1, 2] - T_data_list[0]) ** 2 # t = 24
-    #print("ssr ",ssr)
-    #print("y2[1, 3] ", y2[1, 3])
-    #print("V_data_list[0] ", V_data_list[0])
-    ssr += (np.log10(y2[1, 3]) - np.log10(V_data_list[0])) ** 2 # t = 25. 04167
-    #print("ssr ",  ssr)
-    ssr += (y2[1, 0] + y2[1, 1] + y2[1, 2] - np.log10(V_data_list[0])) ** 2 # t = 26
-    #print(ssr)
-    ssr += (y2[1, 0] + y2[1, 1] + y2[1, 2] - T_data_list[1]) ** 2 # t = 27
-    ssr += (y3[1, 0] + y3[1, 1] + y3[1, 2] - np.log10(V_data_list[1])) ** 2 # t = 28
-    ssr += (y3[1, 0] + y3[1, 1] + y3[1, 2] - T_data_list[2]) ** 2 # t = 29
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[3]) ** 2 # t = 31
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - np.log10(V_data_list[2])) ** 2 # t = 33
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[4]) ** 2 # t = 35
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[5]) ** 2 # t = 38
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[6]) ** 2 # t = 40
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[7]) ** 2 # t = 42
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[8]) ** 2 # t = 45
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[9]) ** 2 # t = 47
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[10]) ** 2 # t = 49
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[11]) ** 2 # t = 52
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[12]) ** 2 # t = 54
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[13]) ** 2 # t = 56
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[14]) ** 2 # t = 59
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[15]) ** 2 # t = 61
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[16]) ** 2 # t = 63
-    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[17]) ** 2 # t = 66
-    print(float(np.sum(ssr)))
+    y4 = odeint(base_model, y04, [31, 33, 35, 38, 40, 42, 45, 47, 49, 52, 54, 56, 59, 61, 63, 66],
+                args=(λ, β, k, δ, p, c))
+
+    ssr = 0
+    ssr += (y1[1, 0] + y1[1, 1] + y1[1, 2] - T_data_list[0]) ** 2  # t = 24
+
+    # Handle potential log10(0) or log10(negative) cases
+    v1 = y2[1, 3]
+    log_v1 = np.log10(v1) if v1 > 0 else -np.inf  # or use a very small number like -20
+    ssr += (log_v1 - np.log10(V_data_list[0])) ** 2 if np.isfinite(log_v1) else 0
+
+    ssr += (y2[1, 0] + y2[1, 1] + y2[1, 2] - np.log10(V_data_list[0])) ** 2  # t = 26
+    ssr += (y2[1, 0] + y2[1, 1] + y2[1, 2] - T_data_list[1]) ** 2  # t = 27
+    ssr += (y3[1, 0] + y3[1, 1] + y3[1, 2] - np.log10(V_data_list[1])) ** 2  # t = 28
+    ssr += (y3[1, 0] + y3[1, 1] + y3[1, 2] - T_data_list[2]) ** 2  # t = 29
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[3]) ** 2  # t = 31
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - np.log10(V_data_list[2])) ** 2  # t = 33
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[4]) ** 2  # t = 35
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[5]) ** 2  # t = 38
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[6]) ** 2  # t = 40
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[7]) ** 2  # t = 42
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[8]) ** 2  # t = 45
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[9]) ** 2  # t = 47
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[10]) ** 2  # t = 49
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[11]) ** 2  # t = 52
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[12]) ** 2  # t = 54
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[13]) ** 2  # t = 56
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[14]) ** 2  # t = 59
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[15]) ** 2  # t = 61
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[16]) ** 2  # t = 63
+    ssr += (y4[1, 0] + y4[1, 1] + y4[1, 2] - T_data_list[17]) ** 2  # t = 66
+
     return float(np.sum(ssr))
 
-
 # For parameters spanning orders of magnitude (β, p)
-initial_guess = [0.09, np.log10(1e-8), 0.2, 0.1, np.log10(1e5), 0.1]
+initial_guess = [0.09, np.log10(1e-10), 0.2, 0.1, np.log10(1e5), 0.1]
 bounds = [
     (0.001, 0.5),
     (np.log10(1e-11), np.log10(1e-5)),  # β in log space

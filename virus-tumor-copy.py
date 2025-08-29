@@ -2,6 +2,7 @@ import numpy as np
 from scipy.integrate import odeint
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
 
 
 # --- Helper Function ---
@@ -61,7 +62,10 @@ def ssr(params):
     # Segment 1: 0–26 (no virus injection yet)
     t1 = [0, 24, 26]
     y1 = odeint(base_model, y0, t1, args=(λ, β, k, δ, p, c))
-    total_ssr += np.nansum(safe_log10(T_data_list[0]) - np.sum(safe_log10(y1[1, :3])) ** 2)  # t=24
+    for i in range(len(T_data_list[0])):
+        if not np.isnan(T_data_list[0][i]):
+            total_ssr += np.nansum((T_data_list[0][i]) - ((y1[1,0])) ** 2)  # t=24
+    #total_ssr += np.nansum((T_data_list[0]) - ((y1[1,0])) ** 2)  # t=24
 
     # Inject virus at t=26
     y2_init = y1[-1]
@@ -71,20 +75,46 @@ def ssr(params):
     t2 = [26, 26.04167, 27, 28]
     y2 = odeint(base_model, y2_init, t2, args=(λ, β, k, δ, p, c))
 
-    total_ssr += np.nansum((safe_log10(y2[1, 3]) - safe_log10(V_data_list[0])) ** 2)  # t=26.04167
-    total_ssr += np.nansum(safe_log10(T_data_list[1]) - np.sum(safe_log10(y2[2, :3])) ** 2)  # t=26
-    total_ssr += np.nansum(safe_log10(T_data_list[2]) - np.sum(safe_log10(y2[3, :3])) ** 2)  # t=28
+   # total_ssr +=  np.nansum(((y2[1, 3]) - (V_data_list[0])) ** 2)  # t=26.04167
+
+    y1 = odeint(base_model, y0, t1, args=(λ, β, k, δ, p, c))
+    for i in range(len(T_data_list[0])):
+        if not np.isnan(T_data_list[0][i]):
+            total_ssr += np.nansum((T_data_list[1][i]) - ((y2[0,0])) ** 2)  # t=26
+    #total_ssr +=  np.nansum((T_data_list[1]) - ((y2[2, :3])) ** 2)  # t=26
+
+    for i in range(len(V_data_list[0])):
+        if not np.isnan(V_data_list[0][i]):
+            total_ssr += np.nansum(((y2[1, 3]) - (V_data_list[0][i])) ** 2)  # t=26.04167
+
+    for i in range(len(T_data_list[0])):
+        if not np.isnan(T_data_list[0][i]):
+            total_ssr += np.nansum(((T_data_list[2][i]) - (y2[3, 0])) ** 2)  # t=28
+
+    #total_ssr += np.nansum(((T_data_list[2]) - (y2[3, :3])) ** 2) # t=28
 
     # Inject virus again at t=28
     y3_init = y2[-1]
     y3_init[3] += 100
 
     # Segment 3: 28–31
-    t3 = [28, 29, 31]
+    t3 = [28, 31]
     y3 = odeint(base_model, y3_init, t3, args=(λ, β, k, δ, p, c))
-    total_ssr += np.nansum((safe_log10(y3[0, 3]) - safe_log10(V_data_list[1])) ** 2)  # t=28
-    total_ssr += np.nansum((safe_log10(T_data_list[3]) - np.sum(safe_log10(y3[1, :3])) ** 2))  # t=29
-    total_ssr += np.nansum(safe_log10(T_data_list[4]) - np.sum(safe_log10((y3[2, :3])) ** 2)) # t=31
+    #total_ssr += np.nansum(((y3[0, 3]) - (V_data_list[1])) ** 2)  # t=28
+    #total_ssr += np.nansum(((T_data_list[3]) - (y3[1, :3])) ** 2) # t=29
+    #total_ssr += np.nansum((T_data_list[4]) - ((y3[2, :3])) ** 2) # t=31
+
+    for i in range(len(V_data_list[0])):
+        if not np.isnan(V_data_list[0][i]):
+            total_ssr += np.nansum(((y3[0, 3]) - (V_data_list[1][i])) ** 2)  # t=28
+
+    #for i in range(len(T_data_list[0])):
+       # if not np.isnan(T_data_list[0][i]):
+          # total_ssr += np.nansum((T_data_list[3][i] - (y3[1,0])) ** 2)  # t=29
+
+    for i in range(len(T_data_list[0])):
+        if not np.isnan(T_data_list[0][i]):
+            total_ssr += np.nansum((T_data_list[4][i]) - ((y3[1,0])) ** 2) # t=31
 
     # Inject virus again at t=31
     y4_init = y3[-1]
@@ -93,28 +123,31 @@ def ssr(params):
     # Segment 4: 31–66
     t4 = [31, 33, 35, 38, 40, 42, 45, 47, 49, 52, 54, 56, 59, 61, 63, 66]
     y4 = odeint(base_model, y4_init, t4, args=(λ, β, k, δ, p, c))
+    print(len(T_data_list))
     for i, ti in enumerate(t4):
-        if i + 5 < len(T_data_list):
-            total_ssr += np.nansum(safe_log10(T_data_list[i + 5]) - np.sum(safe_log10(y4[i, :3])) ** 2)
+        print(i)
+        for j in range(len(T_data_list[0])):
+            if not np.isnan(T_data_list[0][j]):
+                total_ssr += np.nansum((T_data_list[i+3][j]) - ((y4[i, 0])) ** 2)  # t=31
 
-    total_ssr += np.nansum((safe_log10(y4[1, 3]) - safe_log10(V_data_list[2])) ** 2) # t=33
+    total_ssr += np.nansum(((y4[1, 3]) - (V_data_list[2])) ** 2) # t=33
 
     print(f"SSR: {total_ssr:.4f}")
     return total_ssr
 
 
 # --- Optimization ---
-initial_guess = [0.15, 1e-5, 0.1854, 0.0880, 7.4416e+04, 20.0]
+initial_guess = [0.1691, 1.1735e-10, 0.1854, 0.0880, 7.4416e+04, 0.0913]
 bounds = [
-    (0.15, 0.35),
+    (0.1691, 0.35),
     (np.log10(1e-11), np.log10(1e-5)),
     (0.05, 5.0),
     (0.05, 5.0),
     (np.log10(1e2), np.log10(1e8)),
-    (0.05, 30.0)
+    (0.05, 10.0)
 ]
 
-result = minimize(ssr, initial_guess, bounds=bounds)
+result = minimize(ssr, initial_guess, bounds=bounds, method = "Nelder-Mead")
 
 λ_fit, β_fit_log, k_fit, δ_fit, p_fit_log, c_fit = result.x
 β_fit = 10 ** β_fit_log
@@ -192,27 +225,6 @@ plt.annotate(f'Viral Production: {p_fit:.1e}\nClearance: {c_fit:.3f}/day',
 plt.tight_layout()
 plt.show()
 
-# --- Tumor Plot for Reference ---
-# plt.figure(figsize=(10, 4))
-# for i in range(len(t_data)):
-#     if i < len(T_data_list):
-#         mask = ~np.isnan(T_data_list[i])
-#         plt.scatter(np.full(np.sum(mask), t_data[i]), T_data_list[i][mask], s=20, color='orangered', alpha=0.7)
-#
-#
-#         # Plot tumor trajectory
-#         total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
-#                                     args=(λ_fit, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
-#         plt.plot(all_times, total_tumor, 'b-', label='Tumor Model')
-#
-#         plt.title("Tumor Volume (For Context)")
-#         plt.ylabel("Tumor Size (mm³)")
-#         plt.xlabel("Time (days)")
-#         plt.grid(alpha=0.3)
-#         plt.legend()
-#         plt.tight_layout()
-#         plt.show()
-
 # --- Tumor Plot ---
 plt.figure(figsize=(10, 6))
 
@@ -246,4 +258,75 @@ plt.annotate(f'λ: {λ_fit:.4f}\nβ: {β_fit:.2e}\nk: {k_fit:.3f}\nδ: {δ_fit:.
              bbox=dict(boxstyle='round', alpha=0.2))
 
 plt.tight_layout()
+plt.show()
+
+# --- Tumor Plot with Interactive Lambda Slider ---
+fig, ax = plt.subplots(figsize=(12, 8))
+plt.subplots_adjust(bottom=0.35)
+
+# Plot experimental data points
+for i in range(len(t_data)):
+    if i < len(T_data_list):
+        mask = ~np.isnan(T_data_list[i])
+        ax.scatter(np.full(np.sum(mask), t_data[i]), T_data_list[i][mask],
+                   s=60, color='orangered', alpha=0.7, label='Experimental Data' if i == 0 else "")
+
+# Initial plot with fitted lambda
+total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
+                            args=(λ_fit, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
+line, = ax.plot(all_times, total_tumor, 'b-', linewidth=2, label='Model Prediction')
+
+# Mark injection times
+for t in injection_times:
+    ax.axvline(t, color='gray', linestyle='--', alpha=0.5)
+    ax.text(t, ax.get_ylim()[1] * 0.95, f'Injection {t}',
+            ha='center', va='top', fontsize=9, backgroundcolor='white')
+
+ax.set_title("Tumor Growth Dynamics (Interactive Lambda)", fontsize=14)
+ax.set_ylabel("Tumor Size (mm³)", fontsize=12)
+ax.set_xlabel("Time (days)", fontsize=12)
+ax.grid(alpha=0.3)
+ax.legend(loc='best')
+
+# Add slider for lambda
+ax_lambda = plt.axes([0.2, 0.1, 0.5, 0.03])
+slider_lambda = Slider(ax_lambda, 'Lambda (λ)', 0.05, 0.5, valinit=λ_fit, valfmt='%.4f')
+
+# Add sliders for y-axis scale
+ax_ymin = plt.axes([0.2, 0.05, 0.2, 0.03])
+ax_ymax = plt.axes([0.5, 0.05, 0.2, 0.03])
+slider_ymin = Slider(ax_ymin, 'Y Min', 0, 12000, valinit=0, valfmt='%d')
+slider_ymax = Slider(ax_ymax, 'Y Max', 0, 12000, valinit=2000, valfmt='%d')
+
+# Parameter annotation
+param_text = ax.annotate(f'λ: {λ_fit:.4f}\nβ: {β_fit:.2e}\nk: {k_fit:.3f}\nδ: {δ_fit:.3f}',
+                         xy=(0.75, 0.15), xycoords='axes fraction',
+                         bbox=dict(boxstyle='round', alpha=0.2))
+
+def update_lambda(val):
+    new_lambda = slider_lambda.val
+
+    # Recalculate tumor trajectory with new lambda
+    new_total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
+                                    args=(new_lambda, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
+
+    # Update the line
+    line.set_ydata(new_total_tumor)
+
+    # Update parameter text
+    param_text.set_text(f'λ: {new_lambda:.4f}\nβ: {β_fit:.2e}\nk: {k_fit:.3f}\nδ: {δ_fit:.3f}')
+
+    # Redraw
+    fig.canvas.draw()
+
+def update_scale(val):
+    ymin = slider_ymin.val
+    ymax = slider_ymax.val
+    ax.set_ylim(ymin, ymax)
+    fig.canvas.draw()
+
+slider_lambda.on_changed(update_lambda)
+slider_ymin.on_changed(update_scale)
+slider_ymax.on_changed(update_scale)
+
 plt.show()

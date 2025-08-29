@@ -61,7 +61,7 @@ def ssr(params):
     # Segment 1: 0–26 (no virus injection yet)
     t1 = [0, 24, 26]
     y1 = odeint(base_model, y0, t1, args=(λ, β, k, δ, p, c))
-    total_ssr += np.nansum(safe_log10(T_data_list[0]) - np.sum(safe_log10(y1[1, :3])) ** 2)  # t=24
+    total_ssr += np.nansum((T_data_list[0] - np.sum(y1[1, :3])) ** 2)  # t=24
 
     # Inject virus at t=26
     y2_init = y1[-1]
@@ -72,8 +72,8 @@ def ssr(params):
     y2 = odeint(base_model, y2_init, t2, args=(λ, β, k, δ, p, c))
 
     total_ssr += np.nansum((safe_log10(y2[1, 3]) - safe_log10(V_data_list[0])) ** 2)  # t=26.04167
-    total_ssr += np.nansum(safe_log10(T_data_list[1]) - np.sum(safe_log10(y2[2, :3])) ** 2)  # t=26
-    total_ssr += np.nansum(safe_log10(T_data_list[2]) - np.sum(safe_log10(y2[3, :3])) ** 2)  # t=28
+    total_ssr += np.nansum((T_data_list[1] - np.sum(y2[2, :3])) ** 2)  # t=26
+    total_ssr += np.nansum((T_data_list[2] - np.sum(y2[3, :3])) ** 2)  # t=28
 
     # Inject virus again at t=28
     y3_init = y2[-1]
@@ -83,8 +83,8 @@ def ssr(params):
     t3 = [28, 29, 31]
     y3 = odeint(base_model, y3_init, t3, args=(λ, β, k, δ, p, c))
     total_ssr += np.nansum((safe_log10(y3[0, 3]) - safe_log10(V_data_list[1])) ** 2)  # t=28
-    total_ssr += np.nansum((safe_log10(T_data_list[3]) - np.sum(safe_log10(y3[1, :3])) ** 2))  # t=29
-    total_ssr += np.nansum(safe_log10(T_data_list[4]) - np.sum(safe_log10((y3[2, :3])) ** 2)) # t=31
+    total_ssr += np.nansum((T_data_list[3] - np.sum(y3[1, :3])) ** 2)  # t=29
+    total_ssr += np.nansum((T_data_list[4] - np.sum(y3[2, :3])) ** 2)  # t=31
 
     # Inject virus again at t=31
     y4_init = y3[-1]
@@ -95,26 +95,26 @@ def ssr(params):
     y4 = odeint(base_model, y4_init, t4, args=(λ, β, k, δ, p, c))
     for i, ti in enumerate(t4):
         if i + 5 < len(T_data_list):
-            total_ssr += np.nansum(safe_log10(T_data_list[i + 5]) - np.sum(safe_log10(y4[i, :3])) ** 2)
+            total_ssr += np.nansum((T_data_list[i + 5] - np.sum(y4[i, :3])) ** 2)
 
-    total_ssr += np.nansum((safe_log10(y4[1, 3]) - safe_log10(V_data_list[2])) ** 2) # t=33
+    total_ssr += np.nansum((safe_log10(y4[1, 3]) - safe_log10(V_data_list[2])) ** 2)  # t=33
 
     print(f"SSR: {total_ssr:.4f}")
     return total_ssr
 
 
 # --- Optimization ---
-initial_guess = [0.15, 1e-5, 0.1854, 0.0880, 7.4416e+04, 20.0]
+initial_guess = [0.09, np.log10(1e-10), 0.2, 0.1, np.log10(1e5), 0.1]
 bounds = [
-    (0.15, 0.35),
+    (0.001, 0.5),
     (np.log10(1e-11), np.log10(1e-5)),
     (0.05, 5.0),
     (0.05, 5.0),
     (np.log10(1e2), np.log10(1e8)),
-    (0.05, 30.0)
+    (0.05, 10.0)
 ]
 
-result = minimize(ssr, initial_guess, bounds=bounds)
+result = minimize(ssr, initial_guess, bounds=bounds, method='nelder-mead')
 
 λ_fit, β_fit_log, k_fit, δ_fit, p_fit_log, c_fit = result.x
 β_fit = 10 ** β_fit_log
@@ -193,57 +193,22 @@ plt.tight_layout()
 plt.show()
 
 # --- Tumor Plot for Reference ---
-# plt.figure(figsize=(10, 4))
-# for i in range(len(t_data)):
-#     if i < len(T_data_list):
-#         mask = ~np.isnan(T_data_list[i])
-#         plt.scatter(np.full(np.sum(mask), t_data[i]), T_data_list[i][mask], s=20, color='orangered', alpha=0.7)
-#
-#
-#         # Plot tumor trajectory
-#         total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
-#                                     args=(λ_fit, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
-#         plt.plot(all_times, total_tumor, 'b-', label='Tumor Model')
-#
-#         plt.title("Tumor Volume (For Context)")
-#         plt.ylabel("Tumor Size (mm³)")
-#         plt.xlabel("Time (days)")
-#         plt.grid(alpha=0.3)
-#         plt.legend()
-#         plt.tight_layout()
-#         plt.show()
-
-# --- Tumor Plot ---
-plt.figure(figsize=(10, 6))
-
-# Plot experimental data points
+plt.figure(figsize=(10, 4))
 for i in range(len(t_data)):
     if i < len(T_data_list):
         mask = ~np.isnan(T_data_list[i])
-        plt.scatter(np.full(np.sum(mask), t_data[i]), T_data_list[i][mask],
-                    s=60, color='orangered', alpha=0.7, label='Experimental Data' if i == 0 else "")
+        plt.scatter(np.full(np.sum(mask), t_data[i]), T_data_list[i][mask], s=20, color='orangered', alpha=0.7)
 
-# Plot tumor trajectory
-total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
-                            args=(λ_fit, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
-plt.plot(all_times, total_tumor, 'b-', linewidth=2, label='Model Prediction')
 
-# Mark injection times
-for t in injection_times:
-    plt.axvline(t, color='gray', linestyle='--', alpha=0.5)
-    plt.text(t, plt.ylim()[1] * 0.95, f'Injection {t}',
-             ha='center', va='top', fontsize=9, backgroundcolor='white')
+        # Plot tumor trajectory
+        total_tumor = np.sum(odeint(base_model, [1.76, 0, 0, 0], all_times,
+                                    args=(λ_fit, β_fit, k_fit, δ_fit, p_fit, c_fit))[:, :3], axis=1)
+        plt.plot(all_times, total_tumor, 'b-', label='Tumor Model')
 
-plt.title("Tumor Growth Dynamics", fontsize=14)
-plt.ylabel("Tumor Size (mm³)", fontsize=12)
-plt.xlabel("Time (days)", fontsize=12)
-plt.grid(alpha=0.3)
-plt.legend(loc='best')
-
-# Add model parameters
-plt.annotate(f'λ: {λ_fit:.4f}\nβ: {β_fit:.2e}\nk: {k_fit:.3f}\nδ: {δ_fit:.3f}',
-             xy=(0.75, 0.15), xycoords='axes fraction',
-             bbox=dict(boxstyle='round', alpha=0.2))
-
-plt.tight_layout()
-plt.show()
+        plt.title("Tumor Volume (For Context)")
+        plt.ylabel("Tumor Size (mm³)")
+        plt.xlabel("Time (days)")
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
